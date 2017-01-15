@@ -32,21 +32,17 @@ def details(request, question_id):
 def vote(request, question_id):
     template = "polls/details.html"
     question = get_object_or_404(Question, pk=question_id)
-    selected_choice = question.choice_set.filter(pk=request.POST['choice'])
-
-    if selected_choice:
+    try:
+        selected_choice = question.choice_set.get(pk=request.POST['choice'])
+    except (KeyError, Choice.DoesNotExist):
+        return render(request, template, {
+            'question': question,
+            'error_message': "You didn't select a choice.",
+        })
+    else:
         selected_choice.votes += 1
         selected_choice.save()
-
-        return HttpResponseRedirect(reverse('polls:results', args=(question_id,)))
-    else:
-        return render(
-                request, template,
-                {
-                    'question': question,
-                    'error_message': "Please select a choice"
-                }
-            )
+        return HttpResponseRedirect(reverse('results', args=(question.id,)))
 
 def results(request, question_id):
     template = "polls/results.html"
